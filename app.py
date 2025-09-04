@@ -9,10 +9,8 @@ import re
 st.set_page_config(page_title="Analisis Sentimen Teks", page_icon="💬")
 st.title("💬 Analisis Sentimen Komentar Sosial Media")
 
-# ================================
-# Repo HuggingFace (Dataset)
-# ================================
-REPO_ID = "zahralitha/sentimenteks"   # <- ini sesuai repo kamu
+
+REPO_ID = "zahratalitha/sentimenteks"  
 MODEL_ZIP = "sentiment_model_tf.zip"
 TOKENIZER_ZIP = "tokenizer.zip"
 
