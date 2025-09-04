@@ -9,6 +9,11 @@ import re
 st.set_page_config(page_title="Analisis Sentimen Teks", page_icon="💬")
 st.title("💬 Analisis Sentimen Komentar Sosial Media")
 
+from tensorflow import keras
+from keras.utils import get_custom_objects
+
+custom_objects = {"TFOpLambda": lambda x: x}
+model = keras.models.load_model("sentiment_model.h5", custom_objects=custom_objects)
 
 REPO_ID = "zahratalitha/sentimenteks"  
 MODEL_ZIP = "sentiment_model_tf.zip"
