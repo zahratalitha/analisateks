@@ -1,16 +1,16 @@
 import streamlit as st
 import tensorflow as tf
 from transformers import AutoTokenizer
+from huggingface_hub import hf_hub_download
 import zipfile
 import os
 import re
 
-# === Setup halaman ===
 st.set_page_config(page_title="Analisis Sentimen Tom Lembong", page_icon="💬")
 st.title("💬 Analisis Sentimen Komentar Kasus Tom Lembong")
 
-# === Ekstrak model kalau belum ada ===
-MODEL_ZIP = "best_model_full.zip"
+REPO_ID = "zahratalitha/analisa"  
+MODEL_ZIP = hf_hub_download(repo_id=REPO_ID, filename="best_model_full.zip")
 MODEL_DIR = "best_model_full"
 
 if not os.path.exists(MODEL_DIR):
@@ -21,7 +21,6 @@ if not os.path.exists(MODEL_DIR):
 MODEL_PATH = os.path.join(MODEL_DIR, "model")
 TOKENIZER_PATH = os.path.join(MODEL_DIR, "tokenizer")
 
-# === Load model & tokenizer ===
 @st.cache_resource
 def load_model():
     model = tf.keras.models.load_model(MODEL_PATH)
@@ -30,7 +29,6 @@ def load_model():
 
 model, tokenizer = load_model()
 
-# === Preprocessing ===
 important_mentions = ["tomlembong", "jokowi", "prabowo"]
 important_hashtags = ["savetomlembong", "respect", "ripjustice", "justicefortomlembong"]
 
@@ -66,7 +64,6 @@ def clean_text(text, normalize_slang=True):
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-# === Mapping label ===
 id2label = {
     0: "ANGER",
     1: "DISAPPOINTMENT",
@@ -75,7 +72,6 @@ id2label = {
     4: "HAPPINESS"
 }
 
-# === Fungsi prediksi ===
 def predict(text):
     clean = clean_text(text)
     enc = tokenizer(
@@ -92,7 +88,6 @@ def predict(text):
     label_id = preds.argmax(axis=1)[0]
     return id2label[label_id], float(preds.max()), clean
 
-# === UI ===
 st.subheader("Masukkan teks komentar:")
 option = st.radio("Pilih input:", ["Ketik manual", "Pilih contoh"])
 
