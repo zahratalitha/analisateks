@@ -9,9 +9,8 @@ st.set_page_config(page_title="Analisis Sentimen Sosial Media", page_icon="💬"
 st.title("💬 Analisis Sentimen Komentar Sosial Media")
 
 # --- Download model & tokenizer dari HuggingFace Hub ---
-REPO_ID = "zahralitha/sentimenteks"
+REPO_ID = "zahratalitha/sentimenteks"
 
-# Model h5
 MODEL_FILE = hf_hub_download(repo_id=REPO_ID, filename="sentiment_model.h5")
 
 # Tokenizer (diunggah dalam bentuk zip, jadi perlu ekstrak)
