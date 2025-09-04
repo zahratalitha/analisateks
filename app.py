@@ -2,62 +2,62 @@ import streamlit as st
 import tensorflow as tf
 from transformers import AutoTokenizer
 from huggingface_hub import hf_hub_download
-import os, re
+import zipfile
+import os
 
-st.set_page_config(page_title="Analisis Sentimen", page_icon="💬")
-st.title("💬 Analisis Komentar Pada Kasus Tom Lembong")
+st.set_page_config(page_title="Analisis Sentimen Sosial Media", page_icon="💬")
+st.title("💬 Analisis Sentimen Komentar Sosial Media")
 
-REPO_ID = "zahratalitha/cnn2"
+# --- Download model & tokenizer dari HuggingFace Hub ---
+REPO_ID = "zahralitha/sentimenteks"
 
-MODEL_PATH = hf_hub_download(repo_id=REPO_ID, filename="best_model_tf.h5")
+# Model h5
+MODEL_FILE = hf_hub_download(repo_id=REPO_ID, filename="sentiment_model.h5")
 
-# Tokenizer
-TOKENIZER_PATH = hf_hub_download(repo_id=REPO_ID, filename="best_model_tokenizer.zip")
-TOKENIZER_DIR = os.path.dirname(TOKENIZER_PATH)
+# Tokenizer (diunggah dalam bentuk zip, jadi perlu ekstrak)
+TOKENIZER_ZIP = hf_hub_download(repo_id=REPO_ID, filename="tokenizer.zip")
+if not os.path.exists("tokenizer"):
+    with zipfile.ZipFile(TOKENIZER_ZIP, "r") as zip_ref:
+        zip_ref.extractall("tokenizer")
 
+# --- Load model dan tokenizer ---
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model(MODEL_PATH)
-    tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_DIR)
+    model = tf.keras.models.load_model(MODEL_FILE)
+    tokenizer = AutoTokenizer.from_pretrained("tokenizer")
     return model, tokenizer
 
 model, tokenizer = load_model()
 
-# --- Cleaning teks sederhana ---
-def clean_text(text):
-    text = text.lower()
-    text = re.sub(r"http\S+|www\S+", "", text)
-    text = re.sub(r"[^a-z0-9\s]", " ", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text
+# --- Label mapping (ganti sesuai dataset kamu) ---
+id2label = {
+    0: "SADNESS",
+    1: "ANGER",
+    2: "SUPPORT",
+    3: "HOPE",
+    4: "DISAPPOINTMENT"
+}
 
-# Label mapping
-id2label = {0: "NEGATIVE", 1: "NEUTRAL", 2: "POSITIVE"}
-
+# --- Fungsi prediksi ---
 def predict(text):
-    clean = clean_text(text)
     enc = tokenizer(
-        [clean],
-        padding="max_length",
+        [text],
         truncation=True,
+        padding="max_length",
         max_length=128,
         return_tensors="np"
     )
-    preds = model.predict(
-        {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"]},
-        verbose=0
-    )
+    preds = model.predict([enc["input_ids"], enc["attention_mask"]], verbose=0)
     label_id = preds.argmax(axis=1)[0]
-    return id2label[label_id], float(preds.max()), clean
+    return id2label[label_id], float(preds.max())
 
-# --- UI ---
-st.subheader("Masukkan teks komentar:")
-user_input = st.text_area("Teks:", "")
+# --- UI Streamlit ---
+st.subheader("Masukkan komentar:")
+user_input = st.text_area("Tulis komentar di sini...")
 
-if st.button("🔍 Analisis Sentimen"):
+if st.button("🔍 Analisis"):
     if user_input.strip():
-        label, score, cleaned = predict(user_input)
-        st.info(f"📝 Preprocessed: {cleaned}")
-        st.success(f"**Prediksi:** {label} (confidence: {score:.2f})")
+        label, score = predict(user_input)
+        st.success(f"Prediksi: **{label}** (confidence: {score:.2f})")
     else:
-        st.warning("Silakan masukkan teks terlebih dahulu.")
+        st.warning("Masukkan teks terlebih dahulu.")
