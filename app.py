@@ -6,16 +6,16 @@ import zipfile
 import os
 import re
 
+# ================================
+# Streamlit Config
+# ================================
 st.set_page_config(page_title="Analisis Sentimen Teks", page_icon="💬")
 st.title("💬 Analisis Sentimen Komentar Sosial Media")
 
-from tensorflow import keras
-from keras.utils import get_custom_objects
-
-custom_objects = {"TFOpLambda": lambda x: x}
-model = keras.models.load_model("sentiment_model.h5", custom_objects=custom_objects)
-
-REPO_ID = "zahratalitha/sentimenteks"  
+# ================================
+# Repo HuggingFace
+# ================================
+REPO_ID = "zahratalitha/sentimenteks"
 MODEL_ZIP = "sentiment_model_tf.zip"
 TOKENIZER_ZIP = "tokenizer.zip"
 
@@ -38,11 +38,20 @@ if not os.path.exists(TOKENIZER_DIR):
 # ================================
 # Load Model & Tokenizer
 # ================================
+from tensorflow import keras
+custom_objects = {"TFOpLambda": lambda x: x}
+
 @st.cache_resource
 def load_model():
-    model = tf.keras.models.load_model(MODEL_DIR)
+    model = tf.keras.models.load_model(MODEL_DIR, custom_objects=custom_objects)
     tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_DIR)
     return model, tokenizer
+
+model, tokenizer = load_model()
+
+# Debug: cek input layer model
+st.write("✅ Model loaded")
+st.write("🔑 Model input names:", model.input_names)
 
 # ================================
 # Preprocessing
@@ -76,11 +85,27 @@ id2label = {
 # ================================
 def predict(text):
     clean = clean_text(text)
-    enc = tokenizer(clean, truncation=True, padding="max_length", max_length=128, return_tensors="np")
-    preds = model.predict(
-        {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"]},
-        verbose=0
+
+    enc = tokenizer(
+        clean,
+        truncation=True,
+        padding="max_length",
+        max_length=128,
+        return_tensors="np"
     )
+
+    # Debug: tampilkan key encoding
+    st.write("🔑 Tokenizer output keys:", enc.keys())
+
+    # Sesuaikan input ke model
+    if len(model.input_names) == 1:
+        preds = model.predict(enc["input_ids"], verbose=0)
+    else:
+        preds = model.predict(
+            {"input_ids": enc["input_ids"], "attention_mask": enc["attention_mask"]},
+            verbose=0
+        )
+
     label_id = preds.argmax(axis=1)[0]
     confidence = float(preds.max())
     return id2label[label_id], confidence, clean
