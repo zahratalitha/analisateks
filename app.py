@@ -44,8 +44,6 @@ def load_model():
     tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_DIR)
     return model, tokenizer
 
-model, tokenizer = load_model()
-
 # ================================
 # Preprocessing
 # ================================
